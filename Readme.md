@@ -1,6 +1,7 @@
 ## TapStrap Python SDK (beta)
 
 ### What Is This ?
+This fork is intended to add any form of Linux support. 
 
 TAP python SDK allows you to build python app that can establish BLE connection with the Tap Strap, send commands and receive events and data - Thus allowing TAP to act as a controller for your app!  
 The library is developed with Python >= 3.7 and is **currently in beta**.
