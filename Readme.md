@@ -3,6 +3,9 @@
 ### What Is This ?
 This fork is intended to add any form of Linux support. I use Arch linux so it will probably only work with that at first.
 
+## TODO
+ Bleak is the module that relies on PyObjC. Replace that or get it working since it does have linux support...well so it says.
+
 ### What is This originally ? 
 
 TAP python SDK allows you to build python app that can establish BLE connection with the Tap Strap, send commands and receive events and data - Thus allowing TAP to act as a controller for your app!  
