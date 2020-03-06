@@ -7,9 +7,21 @@ from typing import Callable
 
 from bleak import BleakClient
 from bleak import _logger as logger
-from bleak.backends.corebluetooth.discovery import discover
-from bleak.backends.corebluetooth import CBAPP as cbapp
-from bleak.backends.corebluetooth.CentralManagerDelegate import string2uuid
+from bleak.backends.bluezdbus.discovery import discover
+
+
+#TODO replace imports below with linux working ones....
+#cbapp is a terrible class inside the __init__.py file
+#it seems to only wait for a device to be ready
+#from bleak.backends.bluezdbus import CBAPP as cbapp
+#This comes with cbapp....
+#from bleak.backends.bluezdbus.CentralManagerDelegate import string2uuid
+
+#####
+#REPLACEMENT IMPORTS
+#####
+from bleak.backends.bluezdbus.client import BleakClientBlueZDBus as cbapp
+
 
 from ...TapSDK import TapSDKBase
 from ...models import TapUUID
@@ -20,28 +32,50 @@ from tapsdk import parsers
 class TapClient(BleakClient):
     def __init__(self, address="", loop=None, **kwargs):
         super().__init__(address, loop=loop, **kwargs)
-    
+            
     async def connect_retrieved(self, **kwargs) -> bool:
-        paired_taps = get_paired_taps()
-
+        #get_paired_taps returns a list of BLEdevices
+        #########
+        #TODO#add multiple tap support now that i can use more than just one
+        #I am not adding this to the mac version
+        #########
+        paired_taps = await get_paired_taps()
+        
         logger.debug("Connecting to Tap device @ {}".format(self.address))
-
-        await cbapp.central_manager_delegate.connect_(paired_taps[0])
-
+        #connect to the bluetooth device with id in index 0
+        #Currently if there is no tap straps it will crash
+        aync with BleakClient(address, loop=loop) as client:
+        
         # Now get services
         await self.get_services()
 
         return True
 
-def get_paired_taps():
-    paired_taps = cbapp.central_manager_delegate.central_manager.retrieveConnectedPeripheralsWithServices_(
-                    [string2uuid(TapUUID.tap_service)])
+async def get_paired_taps():
+
+    #Get paired devices
+    ##TODO ^^^^^^
+    paired_devices = await discover()
+    #Paired devices is now a list of bluezdbusclasses
+    #go to each one and look for the tap strap
+    #Debugging print statementst below :p
+    #print(paired_devices)
+    #print(type(paired_devices))
+    #print(type(paired_devices[0]))
+    paired_taps = []
+    for i in paired_devices:
+        #print(i)
+        #print(i.name)
+        #get every device with tap in the name
+        if "Tap" in i.name:
+            paired_taps.append(i)
+    
     logger.debug("Found connected Taps @ {}".format(paired_taps))
     return paired_taps
 
-class TapMacSDK(TapSDKBase):
+class TapLinuxSDK(TapSDKBase):
     def __init__(self, loop: AbstractEventLoop = None):
-        super(TapMacSDK, self).__init__()
+        super(TapLinuxSDK, self).__init__()
         self.loop = loop
         self.manager = TapClient(loop=loop)
         self.mouse_event_cb = None
