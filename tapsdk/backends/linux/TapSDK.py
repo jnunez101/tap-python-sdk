@@ -9,7 +9,6 @@ from bleak import BleakClient
 from bleak import _logger as logger
 from bleak.backends.bluezdbus.discovery import discover
 
-
 #TODO replace imports below with linux working ones....
 #cbapp is a terrible class inside the __init__.py file
 #it seems to only wait for a device to be ready
@@ -21,6 +20,9 @@ from bleak.backends.bluezdbus.discovery import discover
 #REPLACEMENT IMPORTS
 #####
 from bleak.backends.bluezdbus.client import BleakClientBlueZDBus as cbapp
+
+##PyBluez because bleak is a mess
+import bluetooth
 
 
 from ...TapSDK import TapSDKBase
@@ -40,13 +42,15 @@ class TapClient(BleakClient):
         #I am not adding this to the mac version
         #########
         paired_taps = await get_paired_taps()
-        
+        #Paired taps full of BLEdevices
+        #TODO find a way to connect to that bad boi
         logger.debug("Connecting to Tap device @ {}".format(self.address))
         #connect to the bluetooth device with id in index 0
         #Currently if there is no tap straps it will crash
-        aync with BleakClient(address, loop=loop) as client:
+        #cbapp.
         
         # Now get services
+        # this function is in the bleak client
         await self.get_services()
 
         return True
@@ -54,22 +58,21 @@ class TapClient(BleakClient):
 async def get_paired_taps():
 
     #Get paired devices
-    ##TODO ^^^^^^
-    paired_devices = await discover()
+    #paired_devices = await discover()
     #Paired devices is now a list of bluezdbusclasses
     #go to each one and look for the tap strap
     #Debugging print statementst below :p
     #print(paired_devices)
     #print(type(paired_devices))
     #print(type(paired_devices[0]))
+    nearby_devices = bluetooth.discover_devices(lookup_names=True)
+    print(nearby_devices)
     paired_taps = []
-    for i in paired_devices:
+    #for i in paired_devices:
         #print(i)
         #print(i.name)
         #get every device with tap in the name
-        if "Tap" in i.name:
-            paired_taps.append(i)
-    
+            
     logger.debug("Found connected Taps @ {}".format(paired_taps))
     return paired_taps
 
