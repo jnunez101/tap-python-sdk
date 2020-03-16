@@ -8,7 +8,7 @@ from typing import Callable
 from bleak import BleakClient
 from bleak import _logger as logger
 from bleak.backends.bluezdbus.discovery import discover
-
+#from bleak.backends.corebluetooth.service import get_characteristic
 #TODO replace imports below with linux working ones....
 #cbapp is a terrible class inside the __init__.py file
 #it seems to only wait for a device to be ready
@@ -20,10 +20,6 @@ from bleak.backends.bluezdbus.discovery import discover
 #REPLACEMENT IMPORTS
 #####
 from bleak.backends.bluezdbus.client import BleakClientBlueZDBus as cbapp
-
-##PyBluez because bleak is a mess
-import bluetooth
-
 
 from ...TapSDK import TapSDKBase
 from ...models import TapUUID
@@ -39,41 +35,55 @@ class TapClient(BleakClient):
         #get_paired_taps returns a list of BLEdevices
         #########
         #TODO#add multiple tap support now that i can use more than just one
-        #I am not adding this to the mac version
         #########
         paired_taps = await get_paired_taps()
-        #Paired taps full of BLEdevices
+        #print(paired_taps)
+        #print("MARKER")
+        #self.address = paired_taps[0]
         #TODO find a way to connect to that bad boi
+        self.name = paired_taps[0].name
+        self.address = paired_taps[0].address
+        self.details = paired_taps[0].details
+        self.metadata = paired_taps[0].metadata
+        #self.device = paired_taps[0].device
         logger.debug("Connecting to Tap device @ {}".format(self.address))
         #connect to the bluetooth device with id in index 0
         #Currently if there is no tap straps it will crash
-        #cbapp.
+        await self.connect()
         
         # Now get services
         # this function is in the bleak client
         await self.get_services()
+        chars = self.services.get_characteristic(str(TapUUID.tap_mode_characteristic))
+        print("NOTICE ME")
+        print(type(chars))
+
+
 
         return True
 
 async def get_paired_taps():
 
     #Get paired devices
-    #paired_devices = await discover()
+    paired_devices = await discover()
     #Paired devices is now a list of bluezdbusclasses
     #go to each one and look for the tap strap
     #Debugging print statementst below :p
-    #print(paired_devices)
+    #print(len(paired_devices))
     #print(type(paired_devices))
     #print(type(paired_devices[0]))
-    nearby_devices = bluetooth.discover_devices(lookup_names=True)
-    print(nearby_devices)
+    #nearby_devices = bluetooth.discover_devices(lookup_names=True)
+    #print(nearby_devices)
     paired_taps = []
-    #for i in paired_devices:
+    for i in paired_devices:
         #print(i)
         #print(i.name)
         #get every device with tap in the name
-            
-    logger.debug("Found connected Taps @ {}".format(paired_taps))
+        if "Tap" in i.name:
+            #print(i.address)
+            paired_taps.append(i)
+            #paired_taps.append(i.address)
+    #logger.debug("Found connected Taps @ {}".format(paired_taps))
     return paired_taps
 
 class TapLinuxSDK(TapSDKBase):
@@ -178,6 +188,7 @@ class TapLinuxSDK(TapSDKBase):
         logger.debug("Input Mode Refreshed: " + self.input_mode.get_name())
         
     async def _write_input_mode(self, value):
+        #print(TapUUID.tap_mode_characteristic)
         await self.manager.write_gatt_char(TapUUID.tap_mode_characteristic, value)
     
     async def list_connected_taps(self):
